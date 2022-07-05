@@ -1,0 +1,309 @@
+---
+title: "Analisis con sqldf, Mapas de México"
+author: "Villa Perez Oswaldo"
+date: "26 de junio de 2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Consultas en SQL
+
+Importamos las librerias
+
+```{r}
+library(readxl)
+library(sqldf)
+library(dplyr)
+```
+
+Cargamos nuestros datos y mostramos nuestra Tabla
+
+```{r}
+#file.choose()
+df <- "C:\\Users\\datos.xlsx"
+df <- read_excel(df)
+head(df)
+```
+
+
+Mostramos el total Incial por Estado
+
+```{r}
+sqldf("SELECT Entidad_Federativa,  
+      SUM(INICIAL) AS Total_Inicial
+      FROM df
+      GROUP BY Entidad_Federativa
+      ORDER BY Total_Inicial DESC")
+```
+
+
+Mostramos el total Creadas por Estado
+
+```{r}
+sqldf("SELECT Entidad_Federativa,  
+      SUM(CREADAS) AS Total_Creadas
+      FROM df
+      GROUP BY Entidad_Federativa
+      ORDER BY Total_Creadas DESC")
+```
+
+
+Mostramos el total No Funcionan por Estado
+
+```{r}
+sqldf("SELECT Entidad_Federativa,  
+      SUM(NO_FUNCIONAN) AS Total_No_Funcionan
+      FROM df
+      GROUP BY Entidad_Federativa
+      ORDER BY Total_No_Funcionan DESC")
+```
+
+
+Mostramos el Promedio por estado del Actual
+
+```{r}
+sqldf("SELECT Entidad_Federativa,  
+      AVG(ACTUAL) AS Promedio_Actual
+      FROM df
+      GROUP BY Entidad_Federativa
+      ORDER BY Promedio_Actual DESC")
+```
+
+
+Mostramos el acumulado de Estado y el Maximo que No Funcionan
+
+```{r}
+sqldf("SELECT Entidad_Federativa,  
+      SUM(NO_FUNCIONAN) AS Total_No_Funcionan,
+      MAX(NO_FUNCIONAN) AS Max_Periodo
+      FROM df")
+```
+
+
+Mostramos el acumulado de Estado y el Maximo que No Funcionan
+
+```{r}
+sqldf("SELECT Entidad_Federativa,  
+      SUM(NO_FUNCIONAN) AS Total_No_Funcionan,
+      MIN(NO_FUNCIONAN) AS Min_Periodo
+      FROM df")
+```
+
+# 2. Mapas de México
+
+Importamos las librerias, y de ser necesario instalamos los paquetes.
+
+```{r}
+#install.packages(tidyverse)
+library(tidyverse)
+#install.packages(sf)
+library(sf)
+library(dplyr)
+```
+
+Cargamos los poligonos de los estados de la republica
+
+```{r}
+#file.choose()
+mex_map <- st_read("C:\\Users\\oswal\\Documents\\Ciencias de Datos\\6° Semestre\\Mineria de Datos\\Mapas\\México_Estados.shp")
+```
+
+Mostramos los poligonos de los Estados de la Republica Mexicana
+
+```{r}
+mex_map %>%
+  ggplot() + # Crea un objeto ggplot a partir del objeto mex_map
+  geom_sf() # agrega una capa con el mapa
+```
+
+Mostramos el contenido de nuestro mapa
+
+```{r}
+mex_map
+```
+
+Creamos un inner join con nuestros datos y los datos geoespaciales del mapa
+
+```{r}
+mex_map_datos <- mex_map %>%
+  # unir tablas
+  left_join(df,
+            # indicar explícitamente las columnas índice,
+            by = c("CODIGO" = "CODIGO"))
+```
+
+Mostramos la clase del resultado de nuestro LEFT JOIN
+
+```{r}
+class(mex_map_datos)
+```
+
+## Mapas 
+
+## ¿Cual es el Estado que Mas Cierres Presenta?
+
+
+```{r}
+Map1 <- mex_map_datos %>%
+  # usamos el aesthetic fill para indicar la columna de casos
+  filter(PERIODO == 1)%>%
+  ggplot(aes(fill = NO_FUNCIONAN)) +
+  geom_sf() + 
+  labs(title = "México: Distribución de empresas que NO Funcionan")  +
+  # cambia el color de relleno y el título de la leyenda
+  scale_fill_gradient("Empresas No Funcionaron", high = "red", low = "white") +
+  # retirar el fondo gris
+  theme_bw()
+```
+
+## ¿Cuales son los Estado con mas Empresas Creadas?
+
+```{r}
+mex_map_datos %>%
+  # usamos el aesthetic fill para indicar la columna de casos
+  filter(PERIODO == 1)%>%
+  ggplot(aes(fill = CREADAS)) +
+  geom_sf() +
+  labs(title = "México: Distribución de empresas Creadas") +
+  scale_fill_gradient("Empresas Creadas", high = "red", low = "white") +
+  theme_bw()
+```
+
+## ¿Cuales son los Estado con mas Empresas Incicialmente?
+
+```{r}
+mex_map_datos %>%
+  filter(PERIODO == 1)%>%
+  ggplot(aes(fill = INICIAL)) +
+  geom_sf() +
+  labs(title = "México: Distribución de empresas Iniciales") +
+  scale_fill_gradient("Empresas Inciales", high = "red", low = "white") +
+  theme_bw()
+```
+
+
+## ¿Cuales son los Estado con mas Empresas Actualmente?
+
+```{r}
+mex_map_datos %>%
+  # usamos el aesthetic fill para indicar la columna de casos
+  filter(PERIODO == 1)%>%
+  ggplot(aes(fill = ACTUAL)) +
+  geom_sf() +
+  labs(title = "México: Distribución de empresas Actualmente")  +
+  # cambia el color de relleno y el título de la leyenda
+  scale_fill_gradient("Empresas Actualmente", high = "red", low = "white") +
+  # retirar el fondo gris
+  theme_bw()
+```
+
+# Mapa con Etiquetas
+
+Librerias necesarias para colocar etiquetas en Mapas
+
+```{r}
+library(ggplot2)
+#install.packages('ggrepel')
+library(ggrepel)
+library(purrr)
+library(dplyr)
+```
+
+Creamos un inner join con nuestros datos y los datos geoespaciales del mapa
+
+```{r}
+map_tags1 <- mex_map %>%
+  # unir tablas
+  left_join(df,
+            # indicar explícitamente las columnas índice,
+            by = c("CODIGO" = "CODIGO"))
+```
+
+Convertimos unicamente a DataFrame nuestro para archivo
+
+```{r}
+mex_map_datos <- data.frame(mex_map_datos)
+mex_map_datos
+```
+
+
+Creamos un dataframe para la suma de estos resultados por Periodo. 
+
+```{r}
+mex_map_datos%>%
+  group_by(PERIODO)%>%
+  select(INICIAL, CREADAS, NO_FUNCIONAN, ACTUAL)%>%
+  summarise_all(sum)
+
+```
+
+
+```{r}
+per1 <- mex_map_datos %>%
+  filter(PERIODO == 1) %>%
+  select(CODIGO, geometry, ESTADO,INICIAL, CREADAS, NO_FUNCIONAN, ACTUAL)%>%
+  mutate(
+    POR_INI = INICIAL/4857007.33,
+    POR_CRE = CREADAS/619442.9854,
+    POR_NO_F = NO_FUNCIONAN/1010857.222,
+    POR_ACT = ACTUAL/4465593.09) %>%
+  mutate(
+    POR_INI = round(POR_INI, 2),
+    POR_CRE = round(POR_CRE, 2),
+    POR_NO_F = round(POR_NO_F, 2),
+    POR_ACT = round(POR_ACT, 2))
+per1
+```
+
+
+
+```{r}
+#Centroides: Podemos crear un punto al centro de cada unidad, lo cual nos permitirá colocar el nombre de cada departamento
+
+#Se crea el centroide
+map_tags <- per1 %>% 
+  mutate(
+  centroid = map(geometry, st_centroid),
+  coords = map(centroid, st_coordinates), 
+  coords_x = map_dbl(coords, 1), 
+  coords_y = map_dbl(coords,2)
+  )
+
+#Mapa con etiquetas de departamentos
+ggplot(data = map_tags) +
+  geom_sf(fill="skyblue", color="black")+ #Se le agrega un relleno celeste y bordes negros
+  geom_text_repel(mapping = aes(coords_x, coords_y, label = ESTADO), size = 1.25) #Se inserta el nombre de cada departamento
+```
+
+
+
+
+```{r}
+per1 %>%
+  # usamos el aesthetic fill para indicar la columna de casos
+  ggplot(aes(fill = NO_FUNCIONAN)) +
+  geom_sf() + 
+  labs(title = "México: Distribución de empresas que NO Funcionan")  +
+  # cambia el color de relleno y el título de la leyenda
+  scale_fill_gradient("Empresas No Funcionaron", high = "#53868B", low = "#8EE5EE") +
+  #tags
+  geom_text(data = per1, aes(x = X, y = Y, label = POR_INI))
+  # retirar el fondo gris
+  theme_bw()
+```
+
+# Guaradar Imagenes vectoriales en PDF
+
+```{r}
+#file.choose()
+setwd("C:\\Users\\oswal\\Documents\\Ciencias de Datos\\6° Semestre\\Mineria de Datos\\Mapas\\Imagenes")
+
+pdf(file="fig1.pdf")
+Map1
+dev.off()
+
+```
+
