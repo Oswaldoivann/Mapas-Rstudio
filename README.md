@@ -6,7 +6,7 @@ En este repositorio dejo el codigo de Analisis de Datos con la Libreria (sqldf) 
 
   * Set de Datos
   * Archivo.rmd
-  * Carpeta Mapas (México Estados.shp)
+  * Carpeta Mapas (México_Estados.shp)
   
 
 ![Image text](https://github.com/Oswaldoivann/Mapas-Rstudio/blob/main/g1400.png)
