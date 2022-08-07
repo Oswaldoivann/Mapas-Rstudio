@@ -1,8 +1,8 @@
 # Mapas-Rstudio
-Creacion de mapas de México con el lenguaje R
+Creacion de mapas de México con R
 
 
-En este repositorio dejo el codigo de Analisis de Datos con la Libreria (sqldf) y los graficos unos mapas de calor de México, realizados con algunos datos del INEGI - Censos Economicos 2019.
+En este repositorio dejo el codigo de Analisis de Datos con la Libreria "sqldf" y unos graficos de calor de México, realizados con datos del INEGI - Censos Economicos 2019.
 
   * Set de Datos
   * Archivo.rmd
